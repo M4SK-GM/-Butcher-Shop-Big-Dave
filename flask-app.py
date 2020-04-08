@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 
 def main():
-    @app.route('/index')
+    @app.route('/')
     def index():
         return render_template('index.html', title='Основная')
     app.run()
