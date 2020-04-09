@@ -2,14 +2,22 @@ h1{
 	color: white;
 	font: Raleway-Bold;
 }
+h4{
+	color: white;
+	font: Raleway-Bold;
+}
+a{
+	color: white;
+	font: Raleway-Bold;
+}
 p{
+	margin-top: 20px;
 	font-size: 20pt;
 	font-style: Lato-Light
 }
 .container {
   width: auto;
-  max-width: 680px;
-  padding: 0 15px;
+  max-width: 860px;
 }
 
 .footer {

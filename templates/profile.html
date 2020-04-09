@@ -1,0 +1,9 @@
+{% extends "base_register_login.html" %}
+{% block content %}
+<h2>{{ user.surname }} {{ user.name }}</h2>
+<p>ID: {{ user.id }}</p>
+<p>Email: {{ user.email }}</p>
+<p>Дата регистрации: {{ user.created_date }}</p>
+<a href="/logout" class="btn btn-danger">Выйти</a>
+
+{% endblock %}
