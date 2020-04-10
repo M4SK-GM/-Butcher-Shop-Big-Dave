@@ -15,16 +15,17 @@ p{
 	font-size: 20pt;
 	font-style: Lato-Light
 }
-.container {
+
+
+main.container {
   width: auto;
-  max-width: 860px;
+  min-height: 820px;
+  padding: 0 15px;
 }
 
 .footer {
-	position: fixed; /* Фиксированное положение */
-    left: 0; bottom: 0; /* Левый нижний угол */
-    padding: 10px; /* Поля вокруг текста */
-    color: #fff; /* Цвет текста */
-    width: 100%; /* Ширина слоя */
- 	background-color: #f5f5f5;
+    min-height: 100px;
+	bottom: 0;
+	left: 0;
+  	background-color: #f5f5f5;
 }

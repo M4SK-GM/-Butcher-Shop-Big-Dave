@@ -1,9 +1,18 @@
 {% extends "base_register_login.html" %}
 {% block content %}
-<h2>{{ user.surname }} {{ user.name }}</h2>
-<p>ID: {{ user.id }}</p>
-<p>Email: {{ user.email }}</p>
-<p>Дата регистрации: {{ user.created_date }}</p>
-<a href="/logout" class="btn btn-danger">Выйти</a>
+{% if user.confirm_email == 0 %}
+<p class="alert alert-danger" role="alert">Ваш e-mail адрес не подтверждён. После подтверждения вы получите скидку в 10%
+    на следующую покупку <a href="/confirm" class="btn btn-danger">Подтвердить</a></p>
+{% endif %}
+<div class="card" style="width: 64rem; height: 30rem;">
+    <div class="card-body">
+        <h5 class="card-title" style="font-size: 40pt;">{{ user.surname }} {{ user.name }}</h5>
+        <h6 class="card-subtitle mb-2 text-muted" style="font-size: 30pt;">ID: {{ user.id }}</h6>
+        <h6 class="card-subtitle mb-2 text-muted" style="font-size: 30pt;">Email: {{ user.email }}</h6>
+        <h6 class="card-subtitle mb-2 text-muted" style="font-size: 30pt;">Дата регистрации: {{ user.created_date
+            }}</h6>
+        <a href="/logout" class="btn btn-danger" style="width: 10rem; height: 2,5rem;">Выйти</a>
+    </div>
+</div>
 
 {% endblock %}
