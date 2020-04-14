@@ -7,10 +7,12 @@ from flask_restful import Api
 from werkzeug.utils import redirect
 
 from data import db_session, confirm_form
+from data.Dish import Dish
 from data.User import User
 from data.login_form import LoginForm
 from data.register_form import RegisterForm
 from data import mail
+from data import admin_form
 
 app = Flask(__name__)
 app = Flask(__name__)
@@ -74,7 +76,15 @@ def main():
 
     @app.route('/eatery')
     def menu():
-        render_template('eatery_index.html', title='Закусочная')
+        session = db_session.create_session()
+        dish = session.query(Dish).all()
+        return render_template('eatery-main.html', title='Закусочная', dish=dish)
+
+    @app.route('/eatery/<int: id>', methods=['GET'])
+    def menu(id):
+        session = db_session.create_session()
+        dish = session.query(Dish).get(id)
+        return render_template('eatery-dish.html', title='Закусочная', dish=dish)
 
     @app.route('/motorcycle_workshop')
     def motorcycle():
@@ -121,6 +131,95 @@ def main():
                 return render_template('confirm-email.html', title='Подтверждение почты', form=form,
                                        message='Неверный код')
         return render_template('confirm-email.html', title='Подтверждение почты', form=form)
+
+    @app.route('/admin')
+    @login_required
+    def admin():
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            return render_template('admin-panel_main.html')
+
+    @app.route('/admin/eatery')
+    @login_required
+    def admin_eatery():
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            dish = session.query(Dish).all()
+            return render_template('admin-panel_eatery.html', dish=dish)
+
+    @app.route('/admin/eatery/add_dish', methods=['GET', 'POST'])
+    def admin_eatery_add_dish():
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            form = admin_form.Add_Dish_Form()
+            if form.validate_on_submit():
+                session = db_session.create_session()
+                name_for_image = "_".join(form.name.data.split())
+                print(name_for_image)
+                dish = Dish(
+                    name=form.name.data,
+                    short_description=form.short_description.data,
+                    full_description=form.full_description.data,
+                    price=form.price.data,
+                    photo=f'http://127.0.0.1:5000/static/img/{name_for_image}.jpg'
+                )
+                session.add(dish)
+                session.commit()
+                f = request.files['file']
+                f.save(f'./static/img/{name_for_image}.jpg')
+                return redirect('/admin/eatery')
+            return render_template('admin-panel_eatery_add_dish.html', form=form)
+
+    @app.route('/admin/motorcycle_workshop')
+    @login_required
+    def admin_motorcycle_workshop():
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            return render_template('admin-panel_main.html')
+
+    @app.route('/admin/profile')
+    @login_required
+    def admin_profile():
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            return render_template('admin-panel_main.html')
+
+    """@app.route('/sample_file_upload', methods=['POST', 'GET'])
+    def sample_file_upload():
+        if request.method == 'GET':
+            return f'''<!doctype html>
+                            <html lang="en">
+                              <head>
+                                <meta charset="utf-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+                                 <link rel="stylesheet"
+                                 href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+                                 integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+                                 crossorigin="anonymous">
+                                <title>Пример загрузки файла</title>
+                              </head>
+                              <body>
+                                <h1>Загрузим файл</h1>
+                                <form method="post" enctype="multipart/form-data">
+                                   <div class="form-group">
+                                        <label for="photo">Выберите файл</label>
+                                        <input type="file" class="form-control-file" id="photo" name="file">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Отправить</button>
+                                </form>
+                              </body>
+                            </html>'''
+        elif request.method == 'POST':
+            f = request.files['file']
+            print(f)
+            f.save('./static/img/Без имени-1.jpg')
+            return "Форма отправлена"""
 
     app.run()
 

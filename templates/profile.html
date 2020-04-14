@@ -12,6 +12,9 @@
         <h6 class="card-subtitle mb-2 text-muted" style="font-size: 30pt;">Дата регистрации: {{ user.created_date
             }}</h6>
         <a href="/logout" class="btn btn-danger" style="width: 10rem; height: 2,5rem;">Выйти</a>
+        {% if user.status == 'admin' %}
+        <a href="/admin" class="btn btn-primary" style="width: 10rem; height: 2,5rem;">Админ</a>
+        {% endif %}
     </div>
 </div>
 
