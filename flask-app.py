@@ -3,10 +3,11 @@ import random
 
 from flask import Flask, render_template, request
 from flask_login import login_manager, LoginManager, current_user, login_user, login_required, logout_user
-from flask_restful import Api
+from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
 from data import db_session, confirm_form
+from data.Services import Services
 from data.Dish import Dish
 from data.User import User
 from data.login_form import LoginForm
@@ -30,10 +31,13 @@ def main():
         session = db_session.create_session()
         return session.query(User).get(user_id)
 
+    # Основа
     @app.route('/')
     def index():
         return render_template('index.html', title='Основная')
 
+    # ===ПРОФИЛЬ===
+    # Профиль|Логин
     @app.route('/login', methods=['GET', 'POST'])
     def register_login():
         form = LoginForm()
@@ -48,6 +52,7 @@ def main():
                                    form=form)
         return render_template('login.html', title='Авторизация', form=form)
 
+    # Профиль|Регистрация
     @app.route('/register', methods=['GET', 'POST'])
     def reqister():
         form = RegisterForm()
@@ -74,22 +79,7 @@ def main():
             return redirect('/login')
         return render_template('register.html', title='Регистрация', form=form)
 
-    @app.route('/eatery')
-    def menu():
-        session = db_session.create_session()
-        dish = session.query(Dish).all()
-        return render_template('eatery-main.html', title='Закусочная', dish=dish)
-
-    @app.route('/eatery/<int: id>', methods=['GET'])
-    def menu(id):
-        session = db_session.create_session()
-        dish = session.query(Dish).get(id)
-        return render_template('eatery-dish.html', title='Закусочная', dish=dish)
-
-    @app.route('/motorcycle_workshop')
-    def motorcycle():
-        pass
-
+    # Профиль|Страница профиля
     @app.route('/profile')
     def profile():
         if current_user.is_authenticated:
@@ -98,12 +88,14 @@ def main():
         else:
             return redirect('/login')
 
+    # Профиль|Выход
     @app.route('/logout')
     @login_required
     def logout():
         logout_user()
         return redirect("/")
 
+    # Профиль|Подтверждение почты
     @app.route('/confirm', methods=['GET', 'POST'])
     @login_required
     def confirm_email():
@@ -132,6 +124,38 @@ def main():
                                        message='Неверный код')
         return render_template('confirm-email.html', title='Подтверждение почты', form=form)
 
+    # ===ЗАКУСОЧНАЯ===
+    # Закусочная|Основа
+    @app.route('/eatery')
+    def menu():
+        session = db_session.create_session()
+        dish = session.query(Dish).all()
+        return render_template('eatery-main.html', title='Закусочная', dish=dish)
+
+    # Закусочная|Отдельная страница блюда
+    @app.route('/eatery/<int:id>', methods=['GET'])
+    def current_dish(id):
+        session = db_session.create_session()
+        dish = session.query(Dish).get(id)
+        return render_template('eatery-dish.html', title=dish.name, dish=dish)
+
+    # ===МОТОМАСТЕРСКАЯ===
+    # Мотомастерская|Основа
+    @app.route('/motorcycle_workshop')
+    def motorcycle():
+        session = db_session.create_session()
+        services = session.query(Services).all()
+        return render_template('motorcycle_workshop-main.html', title='Мотомастерская', services=services)
+
+    # Мотомастерская|Отдельная страница услуги
+    @app.route('/motorcycle_workshop/<int:id>', methods=['GET'])
+    def current_services(id):
+        session = db_session.create_session()
+        services = session.query(Services).get(id)
+        return render_template('motorcycle_workshop_services.html', title=services.name, services=services)
+
+    # ===АДМИН-ПАНЕЛЬ===
+    # Админ|Основа
     @app.route('/admin')
     @login_required
     def admin():
@@ -140,6 +164,7 @@ def main():
         else:
             return render_template('admin-panel_main.html')
 
+    # Админ|Закусочная
     @app.route('/admin/eatery')
     @login_required
     def admin_eatery():
@@ -150,6 +175,7 @@ def main():
             dish = session.query(Dish).all()
             return render_template('admin-panel_eatery.html', dish=dish)
 
+    # Админ|Закусочная|Добавление блюда
     @app.route('/admin/eatery/add_dish', methods=['GET', 'POST'])
     def admin_eatery_add_dish():
         if current_user.status != 'admin':
@@ -159,7 +185,6 @@ def main():
             if form.validate_on_submit():
                 session = db_session.create_session()
                 name_for_image = "_".join(form.name.data.split())
-                print(name_for_image)
                 dish = Dish(
                     name=form.name.data,
                     short_description=form.short_description.data,
@@ -174,14 +199,128 @@ def main():
                 return redirect('/admin/eatery')
             return render_template('admin-panel_eatery_add_dish.html', form=form)
 
+    # Админ|Закусочная|Удалить блюдо
+    @app.route('/admin/eatery/delete/<int:id>', methods=['GET', 'POST'])
+    def delete_eatery(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            dish = session.query(Dish).get(id)
+            session.delete(dish)
+            session.commit()
+            return redirect('/admin/eatery')
+
+    # Админ|Закусочная|Изменить блюдо
+    @app.route('/admin/eatery/<int:id>', methods=['GET', 'POST'])
+    def redact_dish(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            form = admin_form.Add_Dish_Form()
+            if request.method == "GET":
+                session = db_session.create_session()
+                dish = session.query(Dish).filter(Dish.id == id).first()
+                if dish:
+                    form.name.data = dish.name
+                    form.short_description.data = dish.short_description
+                    form.full_description.data = dish.full_description
+                    form.price.data = dish.price
+                else:
+                    abort(404)
+            if form.validate_on_submit():
+                session = db_session.create_session()
+                dish = session.query(Dish).filter(Dish.id == id).first()
+                if dish:
+                    dish.name = form.name.data
+                    dish.short_description = form.short_description.data
+                    dish.full_description = form.full_description.data
+                    dish.price = form.price.data
+                    session.commit()
+                    return redirect('/admin/eatery')
+                else:
+                    abort(404)
+            return render_template('admin-panel_eatery_add_dish.html', form=form)
+
+    # Админ|Мотомастерская|Основа
     @app.route('/admin/motorcycle_workshop')
     @login_required
     def admin_motorcycle_workshop():
         if current_user.status != 'admin':
             return redirect('/')
         else:
-            return render_template('admin-panel_main.html')
+            session = db_session.create_session()
+            services = session.query(Services).all()
+            return render_template('admin-panel_motorcycle_workshop.html', services=services)
 
+    # Админ|Мотомастерская|Добавление услуги
+    @app.route('/admin/motorcycle_workshop/add_services', methods=['GET', 'POST'])
+    def admin_motorcycle_workshop_services():
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            form = admin_form.Add_Services()
+            if form.validate_on_submit():
+                session = db_session.create_session()
+                name_for_image = "_".join(form.name.data.split())
+                services = Services(
+                    name=form.name.data,
+                    short_description=form.short_description.data,
+                    full_description=form.full_description.data,
+                    price=form.price.data,
+                    photo=f'http://127.0.0.1:5000/static/img/{name_for_image}.jpg'
+                )
+                session.add(services)
+                session.commit()
+                f = request.files['file']
+                f.save(f'./static/img/{name_for_image}.jpg')
+                return redirect('/admin/motorcycle_workshop')
+            return render_template('admin-panel_eatery_add_dish.html', form=form)
+
+    # Админ|Мотомастерская|Удалить услугу
+    @app.route('/admin/motorcycle_workshop/delete/<int:id>', methods=['GET', 'POST'])
+    def delete_service(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            services = session.query(Services).get(id)
+            session.delete(services)
+            session.commit()
+            return redirect('/admin/motorcycle_workshop')
+
+    # Админ|Мотомастерская|Изменить услугу
+    @app.route('/admin/motorcycle_workshop/<int:id>', methods=['GET', 'POST'])
+    def redact_service(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            form = admin_form.Add_Services()
+            if request.method == "GET":
+                session = db_session.create_session()
+                services = session.query(Services).filter(Services.id == id).first()
+                if services:
+                    form.name.data = services.name
+                    form.short_description.data = services.short_description
+                    form.full_description.data = services.full_description
+                    form.price.data = services.price
+                else:
+                    abort(404)
+            if form.validate_on_submit():
+                session = db_session.create_session()
+                dish = session.query(Dish).filter(Dish.id == id).first()
+                if dish:
+                    dish.name = form.name.data
+                    dish.short_description = form.short_description.data
+                    dish.full_description = form.full_description.data
+                    dish.price = form.price.data
+                    session.commit()
+                    return redirect('/admin/motorcycle_workshop')
+                else:
+                    abort(404)
+            return render_template('admin-panel_eatery_add_dish.html', form=form)
+
+    # Админ|Профиль|Основа
     @app.route('/admin/profile')
     @login_required
     def admin_profile():
@@ -189,37 +328,6 @@ def main():
             return redirect('/')
         else:
             return render_template('admin-panel_main.html')
-
-    """@app.route('/sample_file_upload', methods=['POST', 'GET'])
-    def sample_file_upload():
-        if request.method == 'GET':
-            return f'''<!doctype html>
-                            <html lang="en">
-                              <head>
-                                <meta charset="utf-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-                                 <link rel="stylesheet"
-                                 href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-                                 integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
-                                 crossorigin="anonymous">
-                                <title>Пример загрузки файла</title>
-                              </head>
-                              <body>
-                                <h1>Загрузим файл</h1>
-                                <form method="post" enctype="multipart/form-data">
-                                   <div class="form-group">
-                                        <label for="photo">Выберите файл</label>
-                                        <input type="file" class="form-control-file" id="photo" name="file">
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Отправить</button>
-                                </form>
-                              </body>
-                            </html>'''
-        elif request.method == 'POST':
-            f = request.files['file']
-            print(f)
-            f.save('./static/img/Без имени-1.jpg')
-            return "Форма отправлена"""
 
     app.run()
 

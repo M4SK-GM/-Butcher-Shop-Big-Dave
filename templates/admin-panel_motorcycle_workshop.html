@@ -1,17 +1,17 @@
 {% extends "admin-panel_base.html" %}
 {% block content %}
-<h1 style="color: black;">Админ панель. Закусочная.</h1>
-<a class="btn btn-danger" href="/admin/eatery/add_dish">Добавить блюдо</a>
+<h1 style="color: black;">Админ панель. Мотомастерская.</h1>
+<a class="btn btn-danger" href="/admin/motorcycle_workshop/add_services">Добавить услугу</a>
 <div class="row">
-    {% for item in dish%}
+    {% for item in services%}
     <div class="col-md6 border rounded" style="margin: 10px;">
         <div class="card" style="width: 18rem;">
             <img src={{ item.photo }} class="card-img-top" alt={{ item.photo }}>
             <div class="card-body">
                 <h5 class="card-title" style="font-size: 36px;">{{ item.name }}</h5>
                 <p class="card-text" style="font-size: 16px;">{{ item.short_description}}</p>
-                <a href="/admin/eatery/{{ item.id }}" class="btn btn-primary">Изменить</a>
-                <a href="/admin/eatery/delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
+                <a href="/admin/motorcycle_workshop/{{ item.id }}" class="btn btn-primary">Изменить</a>
+                <a href="/admin/motorcycle_workshop/delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
             </div>
         </div>
     </div>

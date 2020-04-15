@@ -1,0 +1,22 @@
+{% extends "base_motorcycle_workshop.html" %}
+{% block content %}
+<div class="row">
+    <img src={{ services.photo }} alt={{ services.photo }}>
+    <img src={{ services.photo }} alt={{ services.photo }}>
+    <img src={{ services.photo }} alt={{ services.photo }}>
+    <img src={{ services.photo }} alt={{ services.photo }}>
+</div>
+<p style="font-size: 30px;">
+    {{ services.name }}<br>
+</p>
+<div style="position: absolute; right: 10px; top: 175px;">
+    <p>
+        {{ services.price }} руб.
+        <a href="#" class="btn btn-success" style="width: 15rem; height: 2,5rem;">Добавить в корзину</a>
+    </p>
+</div>
+<p style="font-size: 20px;">{{ services.full_description }}</p>
+<p>
+    <a href="/motorcycle_workshop" class="btn btn-danger" style="width: 15rem; height: 2,5rem;">Назад</a>
+</p>
+{% endblock %}

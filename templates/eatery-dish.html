@@ -1,3 +1,22 @@
 {% extends "base_eatery.html" %}
 {% block content %}
+<div class="row">
+    <img src={{ dish.photo }} alt={{ dish.photo }}>
+    <img src={{ dish.photo }} alt={{ dish.photo }}>
+    <img src={{ dish.photo }} alt={{ dish.photo }}>
+    <img src={{ dish.photo }} alt={{ dish.photo }}>
+</div>
+<p style="font-size: 30px;">
+    {{ dish.name }}<br>
+</p>
+<div style="position: absolute; right: 10px; top: 175px;">
+    <p>
+        {{ dish.price }} руб.
+        <a href="#" class="btn btn-success" style="width: 15rem; height: 2,5rem;">Добавить в корзину</a>
+    </p>
+</div>
+<p style="font-size: 20px;">{{ dish.full_description }}</p>
+<p>
+    <a href="/eatery" class="btn btn-danger" style="width: 15rem; height: 2,5rem;">Назад</a>
+</p>
 {% endblock %}

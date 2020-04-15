@@ -4,8 +4,8 @@ from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
 
-class Dish(SqlAlchemyBase, UserMixin, SerializerMixin):
-    __tablename__ = 'dishes'
+class Services(SqlAlchemyBase, UserMixin, SerializerMixin):
+    __tablename__ = 'services'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     photo = sqlalchemy.Column(sqlalchemy.String)
@@ -14,6 +14,5 @@ class Dish(SqlAlchemyBase, UserMixin, SerializerMixin):
     full_description = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     price = sqlalchemy.Column(sqlalchemy.Float, nullable=True)
 
-
     def __repr__(self):
-        return f'<Dish> {self.id} {self.name}\n {self.short_description}'
+        return f'<Services> {self.id} {self.name}\n{self.short_description}\n{self.price}'
