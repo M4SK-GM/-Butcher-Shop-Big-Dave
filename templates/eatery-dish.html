@@ -12,7 +12,8 @@
 <div style="position: absolute; right: 10px; top: 175px;">
     <p>
         {{ dish.price }} руб.
-        <a href="#" class="btn btn-success" style="width: 15rem; height: 2,5rem;">Добавить в корзину</a>
+        <a href="/cart/add_dish/{{ dish.id }}" class="btn btn-success" style="width: 15rem; height: 2,5rem;">Добавить в
+            корзину</a>
     </p>
 </div>
 <p style="font-size: 20px;">{{ dish.full_description }}</p>

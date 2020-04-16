@@ -1,5 +1,6 @@
 import sqlalchemy
 from flask_login import UserMixin
+from sqlalchemy import orm
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
@@ -13,6 +14,7 @@ class Services(SqlAlchemyBase, UserMixin, SerializerMixin):
     short_description = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     full_description = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     price = sqlalchemy.Column(sqlalchemy.Float, nullable=True)
+    cart = orm.relation("Cart", back_populates='services')
 
     def __repr__(self):
         return f'<Services> {self.id} {self.name}\n{self.short_description}\n{self.price}'

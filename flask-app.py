@@ -7,6 +7,7 @@ from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
 from data import db_session, confirm_form
+from data.Cart import Cart
 from data.Services import Services
 from data.Dish import Dish
 from data.User import User
@@ -21,6 +22,10 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+
+discounts = [  # Скидки. [id блюда, id услуги, скидка(без %)]
+    [1, 1, 5]
+]
 
 
 def main():
@@ -153,6 +158,60 @@ def main():
         session = db_session.create_session()
         services = session.query(Services).get(id)
         return render_template('motorcycle_workshop_services.html', title=services.name, services=services)
+
+    # ===КОРЗИНА===
+    # Корзина|Основа
+    @app.route('/cart')
+    def cart_main():
+        session = db_session.create_session()
+        cart = session.query(Cart).filter(User.id == current_user.id).all()
+        all_price = 0
+        for i in cart:
+            if i.dish:
+                all_price += i.dish.price
+            else:
+                all_price += i.services.price
+        return render_template('cart-main.html', title='Корзина', cart=cart, all_price=all_price)
+
+    # Корзина|Удалить всё
+    @app.route('/cart/clear')
+    def cart_delete():
+        session = db_session.create_session()
+        cart = session.query(Cart).filter(User.id == current_user.id).all()
+        for item in cart:
+            session.delete(item)
+        session.commit()
+        return redirect('/cart')
+
+    # Корзина|Добавить блюдо
+    @app.route('/cart/add_dish/<int:id>')
+    def add_dish_in_cart(id):
+        session = db_session.create_session()
+        dish = session.query(Dish).get(id)
+        user = session.query(User).get(current_user.id)
+        cart = Cart(
+            type='dish',
+            user=user,
+            dish=dish
+        )
+        session.add(cart)
+        session.commit()
+        return redirect('/eatery')
+
+    # Корзина|Добавить услугу
+    @app.route('/cart/add_services/<int:id>')
+    def add_services_in_cart(id):
+        session = db_session.create_session()
+        services = session.query(Services).get(id)
+        user = session.query(User).get(current_user.id)
+        cart = Cart(
+            type='service',
+            user=user,
+            services=services
+        )
+        session.add(cart)
+        session.commit()
+        return redirect('/motorcycle_workshop')
 
     # ===АДМИН-ПАНЕЛЬ===
     # Админ|Основа
@@ -308,12 +367,12 @@ def main():
                     abort(404)
             if form.validate_on_submit():
                 session = db_session.create_session()
-                dish = session.query(Dish).filter(Dish.id == id).first()
-                if dish:
-                    dish.name = form.name.data
-                    dish.short_description = form.short_description.data
-                    dish.full_description = form.full_description.data
-                    dish.price = form.price.data
+                services = session.query(Services).filter(Services.id == id).first()
+                if services:
+                    services.name = form.name.data
+                    services.short_description = form.short_description.data
+                    services.full_description = form.full_description.data
+                    services.price = form.price.data
                     session.commit()
                     return redirect('/admin/motorcycle_workshop')
                 else:
