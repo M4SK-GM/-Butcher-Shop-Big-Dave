@@ -8,6 +8,9 @@ from werkzeug.utils import redirect
 
 from data import db_session, confirm_form
 from data.Cart import Cart
+from data.Comment import Comment
+from data.Comment_form import CommentForm
+from data.Discount import Discount
 from data.Services import Services
 from data.Dish import Dish
 from data.User import User
@@ -22,10 +25,6 @@ api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
-
-discounts = [  # Скидки. [id блюда, id услуги, скидка(без %)]
-    [1, 1, 5]
-]
 
 
 def main():
@@ -122,6 +121,12 @@ def main():
                     created_date=current_user.created_date
                 )
                 session.add(user)
+                discount = Discount(
+                    discount=10,
+                    user=user,
+                    user_id=user.id
+                )
+                session.add(discount)
                 session.commit()
                 return redirect('/profile')
             else:
@@ -138,11 +143,28 @@ def main():
         return render_template('eatery-main.html', title='Закусочная', dish=dish)
 
     # Закусочная|Отдельная страница блюда
-    @app.route('/eatery/<int:id>', methods=['GET'])
+    @app.route('/eatery/<int:id>', methods=['GET', 'POST'])
     def current_dish(id):
         session = db_session.create_session()
         dish = session.query(Dish).get(id)
-        return render_template('eatery-dish.html', title=dish.name, dish=dish)
+        comment = session.query(Comment).filter(Comment.dish == dish).all()
+        comment.reverse()
+        if current_user.is_authenticated:
+            user = session.query(User).filter(User.id == current_user.id).first()
+            form = CommentForm()
+            if form.validate_on_submit():
+                comm = Comment(
+                    text=form.comment.data,
+                    dish=dish,
+                    user=user
+                )
+                session.add(comm)
+                session.commit()
+                return redirect('/eatery/' + str(id))
+        else:
+            user = False
+            form = None
+        return render_template('eatery-dish.html', title=dish.name, dish=dish, comment=comment, user=user, form=form)
 
     # ===МОТОМАСТЕРСКАЯ===
     # Мотомастерская|Основа
@@ -153,25 +175,53 @@ def main():
         return render_template('motorcycle_workshop-main.html', title='Мотомастерская', services=services)
 
     # Мотомастерская|Отдельная страница услуги
-    @app.route('/motorcycle_workshop/<int:id>', methods=['GET'])
+    @app.route('/motorcycle_workshop/<int:id>', methods=['GET', 'POST'])
     def current_services(id):
         session = db_session.create_session()
         services = session.query(Services).get(id)
-        return render_template('motorcycle_workshop_services.html', title=services.name, services=services)
+        comment = session.query(Comment).filter(Comment.services == services).all()
+        comment.reverse()
+        print(comment)
+        if current_user.is_authenticated:
+            user = session.query(User).filter(User.id == current_user.id).first()
+            form = CommentForm()
+            if form.validate_on_submit():
+                comm = Comment(
+                    text=form.comment.data,
+                    services=services,
+                    user=user
+                )
+                session.add(comm)
+                session.commit()
+                return redirect('/motorcycle_workshop/' + str(id))
+        else:
+            user = False
+            form = None
+        return render_template('motorcycle_workshop_services.html', title=services.name, services=services, user=user,
+                               form=form, comment=comment)
 
     # ===КОРЗИНА===
     # Корзина|Основа
     @app.route('/cart')
     def cart_main():
         session = db_session.create_session()
-        cart = session.query(Cart).filter(User.id == current_user.id).all()
+        try:
+            cart = session.query(Cart).filter(User.id == current_user.id).all()
+        except Exception:
+            return redirect('/')
         all_price = 0
+        discount = 0
         for i in cart:
             if i.dish:
                 all_price += i.dish.price
             else:
                 all_price += i.services.price
-        return render_template('cart-main.html', title='Корзина', cart=cart, all_price=all_price)
+            discount_obj = session.query(Discount).filter(Discount.user_id == current_user.id).first()
+            if discount_obj:
+                discount = discount_obj.discount
+        ready_price = all_price * (1 - (discount / 100))
+        return render_template('cart-main.html', title='Корзина', cart=cart, all_price=all_price, discount=discount,
+                               ready_price=ready_price)
 
     # Корзина|Удалить всё
     @app.route('/cart/clear')
@@ -180,6 +230,19 @@ def main():
         cart = session.query(Cart).filter(User.id == current_user.id).all()
         for item in cart:
             session.delete(item)
+        session.commit()
+        return redirect('/cart')
+
+    # Корзина|Подтвердить
+    @app.route('/cart/confirm')
+    def cart_confirm():
+        session = db_session.create_session()
+        cart = session.query(Cart).filter(User.id == current_user.id).all()
+        for item in cart:
+            session.delete(item)
+        discount_obj = session.query(Discount).filter(Discount.user_id == current_user.id).first()
+        if discount_obj:
+            session.delete(discount_obj)
         session.commit()
         return redirect('/cart')
 
@@ -212,6 +275,15 @@ def main():
         session.add(cart)
         session.commit()
         return redirect('/motorcycle_workshop')
+
+    # Корзина|Удалить одно
+    @app.route('/cart/delete/<int:id>')
+    def cart_delete_one(id):
+        session = db_session.create_session()
+        cart = session.query(Cart).get(id)
+        session.delete(cart)
+        session.commit()
+        return redirect('/cart')
 
     # ===АДМИН-ПАНЕЛЬ===
     # Админ|Основа
@@ -379,6 +451,19 @@ def main():
                     abort(404)
             return render_template('admin-panel_eatery_add_dish.html', form=form)
 
+    # Админ|Комментарии|Удалить комментарий
+    @app.route('/delete_comment/<int:id>')
+    @login_required
+    def delete_comm(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            comm = session.query(Comment).get(id)
+            session.delete(comm)
+            session.commit()
+            return redirect('/')
+
     # Админ|Профиль|Основа
     @app.route('/admin/profile')
     @login_required
@@ -386,7 +471,65 @@ def main():
         if current_user.status != 'admin':
             return redirect('/')
         else:
-            return render_template('admin-panel_main.html')
+            session = db_session.create_session()
+            profiles = session.query(User).all()
+            return render_template('admin-panel_profile_main.html', users=profiles)
+
+    # Админ|Профиль|Удалить аккаунт
+    @app.route('/admin/profile/delete/<int:id>')
+    @login_required
+    def admin_delete_profile(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            user = session.query(User).get(id)
+            session.delete(user)
+            session.commit()
+            return redirect('/admin/profile')
+
+    # Админ|Профиль|Дать скидку 10%
+    @app.route('/admin/profile/discount/<int:id>')
+    @login_required
+    def admin_discount(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            user = session.query(User).get(id)
+            discount = Discount(
+                discount=10,
+                user=user,
+                user_id=user.id
+            )
+            session.add(discount)
+            session.commit()
+            return redirect('/admin/profile')
+
+    # Админ|Профиль|Дать админа
+    @app.route('/admin/profile/admin/<int:id>')
+    @login_required
+    def admin_make_admin(id):
+        if current_user.status != 'admin':
+            return redirect('/')
+        else:
+            session = db_session.create_session()
+            user = session.query(User).get(id)
+            session.delete(user)
+            session.commit()
+            cur_user = User(
+                name=user.name,
+                email=user.email,
+                confirm_email=user.confirm_email,
+                code=user.code,
+                surname=user.surname,
+                hashed_password=user.hashed_password,
+                created_date=user.created_date,
+                status='admin'
+            )
+            session.add(cur_user)
+            session.commit()
+            return redirect('/admin/profile')
 
     app.run()
 

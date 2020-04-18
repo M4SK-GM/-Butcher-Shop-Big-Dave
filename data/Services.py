@@ -15,6 +15,7 @@ class Services(SqlAlchemyBase, UserMixin, SerializerMixin):
     full_description = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     price = sqlalchemy.Column(sqlalchemy.Float, nullable=True)
     cart = orm.relation("Cart", back_populates='services')
+    comment = orm.relation("Comment", back_populates='services')
 
     def __repr__(self):
         return f'<Services> {self.id} {self.name}\n{self.short_description}\n{self.price}'

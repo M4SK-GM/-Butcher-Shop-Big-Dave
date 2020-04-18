@@ -20,6 +20,8 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     created_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
     Cart = orm.relation("Cart", back_populates='user')
+    comment = orm.relation("Comment", back_populates='user')
+    Discount = orm.relation("Discount", back_populates='user')
 
     def __repr__(self):
         return f'<User> {self.id} {self.name} {self.surname} {self.email}'

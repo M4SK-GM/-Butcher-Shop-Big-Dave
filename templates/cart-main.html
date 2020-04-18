@@ -13,6 +13,7 @@
         {{
         item.dish.name }}</p>
         <span class="badge badge-success badge-pill" style="font-size: 18px;">{{ item.dish.price }}руб</span>
+        <a href="cart/delete/{{item.id}}"><img src="/static/img/crest.png" style="width: 30px; height: 30px;"></a>
     </li>
     {% endif %}
     {% endfor %}
@@ -29,14 +30,18 @@
         {{
         item.services.name }}</p>
         <span class="badge badge-success badge-pill" style="font-size: 18px;">{{ item.services.price }}руб</span>
+        <a href="cart/delete/{{item.id}}"><img src="/static/img/crest.png" style="width: 30px; height: 30px;"></a>
     </li>
     {% endif %}
     {% endfor %}
 </ul>
-<h3 style="text-align: right;">Итого: {{all_price}} рублей</h3>
+<h3 style="text-align: right;">Общая цена: {{all_price}} рублей</h3>
+<h3 style="text-align: right;">Скидка: {{discount}}%</h3>
+<h3 style="text-align: right;">*-----------------------------*</h3>
+<h3 style="text-align: right;">Итого: {{ready_price}} рублей</h3>
 <p style="text-align: right;">
     <a class="btn btn-danger" href="/cart/clear">Очистить</a>
-    <a class="btn btn-success" href="/cart/clear">Подтвердить*</a>
+    <a class="btn btn-success" href="/cart/confirm">Подтвердить*</a>
 </p>
 
 {% else %}

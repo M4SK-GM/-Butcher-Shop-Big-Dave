@@ -9,6 +9,7 @@
 <p style="font-size: 30px;">
     {{ dish.name }}<br>
 </p>
+{% if user %}
 <div style="position: absolute; right: 10px; top: 175px;">
     <p>
         {{ dish.price }} руб.
@@ -16,8 +17,47 @@
             корзину</a>
     </p>
 </div>
+{% endif %}
 <p style="font-size: 20px;">{{ dish.full_description }}</p>
 <p>
     <a href="/eatery" class="btn btn-danger" style="width: 15rem; height: 2,5rem;">Назад</a>
 </p>
+<p><br><br>Оставить комментарий:</p>
+{% if user %}
+<div class="card" style="width: 48rem; margin: 10px;">
+    <form action="" method="post">
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+        <div class="form-group row">
+            <label for="staticEmail" class="col-sm-2 col-form-label">Имя</label>
+            <div class="col-sm-10">
+                <input type="text" readonly class="form-control-plaintext" id="staticEmail"
+                       value="{{user.surname}} {{user.name}}">
+            </div>
+        </div>
+        {{ form.comment.label }}<br>
+        {{ form.comment(class="form-control") }}<br>
+        {{ form.submit(type="submit", class="btn btn-danger") }}
+    </form>
+</div>
+{% else %}
+<input class="form-control" type="text" placeholder="Чтобы писать комментарии нужно авторизоваться" readonly>
+{% endif %}
+<br>
+<br>
+<p>Комментарии:</p>
+{% for item in comment %}
+<div class="card" style="width: 48rem; margin: 10px;">
+    <div class="card-body">
+        <h5 class="card-title" style="font-size: 16pt;">{{item.user.surname}} {{item.user.name}}</h5>
+        <p class="card-text" style="font-size: 12pt;">{{ item.text }}</p>
+        {% if user.status == 'admin' %}
+        <div>
+            <a href="/delete_comment/{{ item.id }}" class="btn btn-danger"
+               style="width: 15rem; height: 2,5rem;">Удалить</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
