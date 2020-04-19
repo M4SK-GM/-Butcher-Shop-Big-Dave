@@ -1,11 +1,12 @@
 import string
 import random
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response, jsonify
 from flask_login import login_manager, LoginManager, current_user, login_user, login_required, logout_user
 from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
+import site_api
 from data import db_session, confirm_form
 from data.Cart import Cart
 from data.Comment import Comment
@@ -29,6 +30,7 @@ app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 def main():
     db_session.global_init("db/profile.db")
+    app.register_blueprint(site_api.blueprint)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -530,6 +532,10 @@ def main():
             session.add(cur_user)
             session.commit()
             return redirect('/admin/profile')
+
+        @app.errorhandler(404)
+        def not_found(error):
+            return make_response(jsonify({'error': 'Not found'}), 404)
 
     app.run()
 
