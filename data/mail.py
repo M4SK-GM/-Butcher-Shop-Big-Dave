@@ -2,13 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import smtplib
-import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
 from platform import python_version
-import imaplib
 
 
 def send_mail(toaddr, code):
