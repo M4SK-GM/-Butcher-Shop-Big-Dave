@@ -14,13 +14,12 @@ from data.Comment_form import CommentForm
 from data.Discount import Discount
 from data.Services import Services
 from data.Dish import Dish
-from data.User import User
+from data.User import User, ChangeProfile
 from data.login_form import LoginForm
 from data.register_form import RegisterForm
 from data import mail
 from data import admin_form
 
-app = Flask(__name__)
 app = Flask(__name__)
 api = Api(app)
 login_manager = LoginManager()
@@ -136,6 +135,63 @@ def main():
                                        message='Неверный код')
         return render_template('confirm-email.html', title='Подтверждение почты', form=form)
 
+    # Профиль|Изменение профиля
+    @app.route('/profile/change', methods=['GET', 'POST'])
+    @login_required
+    def change_profile():
+        session = db_session.create_session()
+        form = ChangeProfile()
+        user = session.query(User).filter(User.email == current_user.email).first()
+        if request.method == "GET":
+            session = db_session.create_session()
+            if user:
+                form.name.data = user.name
+                form.surname.data = user.surname
+                form.email.data = user.email
+            else:
+                abort(404)
+        if form.validate_on_submit():
+            name_for_image = "_".join(form.name.data.split())
+            f = request.files['file']
+            if f:
+                f.save(f'./static/img/profile/{name_for_image}.jpg')
+                photo = f'/static/img/profile/{name_for_image}.jpg'
+            else:
+                photo = f'{user.photo}'
+            if form.check_password(old_password=form.password.data,
+                                   password=user.hashed_password) and form.new_password.data:
+                new_user = User(
+                    name=form.name.data,
+                    email=form.email.data,
+                    confirm_email=user.confirm_email,
+                    code=user.code,
+                    status=user.status,
+                    surname=form.surname.data,
+                    created_date=user.created_date,
+                    photo=photo
+                )
+                new_user.set_password(form.new_password.data)
+            else:
+                new_user = User(
+                    name=form.name.data,
+                    email=form.email.data,
+                    confirm_email=user.confirm_email,
+                    code=user.code,
+                    status=user.status,
+                    surname=form.surname.data,
+                    hashed_password=user.hashed_password,
+                    created_date=user.created_date,
+                    photo=photo
+                )
+            comments = user.comment
+            session.delete(user)
+            session.commit()
+            new_user.comment = comments
+            session.add(new_user)
+            session.commit()
+            return redirect('/profile')
+        return render_template('change_profile.html', title='Изменение профиля', form=form, user=user)
+
     # ===ЗАКУСОЧНАЯ===
     # Закусочная|Основа
     @app.route('/eatery')
@@ -183,7 +239,6 @@ def main():
         services = session.query(Services).get(id)
         comment = session.query(Comment).filter(Comment.services == services).all()
         comment.reverse()
-        print(comment)
         if current_user.is_authenticated:
             user = session.query(User).filter(User.id == current_user.id).first()
             form = CommentForm()
@@ -208,7 +263,7 @@ def main():
     def cart_main():
         session = db_session.create_session()
         try:
-            cart = session.query(Cart).filter(User.id == current_user.id).all()
+            cart = session.query(Cart).filter(Cart.user_id == current_user.id).all()
         except Exception:
             return redirect('/')
         all_price = 0
@@ -229,7 +284,7 @@ def main():
     @app.route('/cart/clear')
     def cart_delete():
         session = db_session.create_session()
-        cart = session.query(Cart).filter(User.id == current_user.id).all()
+        cart = session.query(Cart).filter(Cart.user_id == current_user.id).all()
         for item in cart:
             session.delete(item)
         session.commit()
@@ -239,7 +294,7 @@ def main():
     @app.route('/cart/confirm')
     def cart_confirm():
         session = db_session.create_session()
-        cart = session.query(Cart).filter(User.id == current_user.id).all()
+        cart = session.query(Cart).filter(Cart.user_id == current_user.id).all()
         for item in cart:
             session.delete(item)
         discount_obj = session.query(Discount).filter(Discount.user_id == current_user.id).first()
@@ -362,6 +417,7 @@ def main():
                 else:
                     abort(404)
             if form.validate_on_submit():
+                name_for_image = "_".join(form.name.data.split())
                 session = db_session.create_session()
                 dish = session.query(Dish).filter(Dish.id == id).first()
                 if dish:
@@ -370,6 +426,9 @@ def main():
                     dish.full_description = form.full_description.data
                     dish.price = form.price.data
                     session.commit()
+                    f = request.files['file']
+                    if f:
+                        f.save(f'./static/img/{name_for_image}.jpg')
                     return redirect('/admin/eatery')
                 else:
                     abort(404)
@@ -440,6 +499,7 @@ def main():
                 else:
                     abort(404)
             if form.validate_on_submit():
+                name_for_image = "_".join(form.name.data.split())
                 session = db_session.create_session()
                 services = session.query(Services).filter(Services.id == id).first()
                 if services:
@@ -448,6 +508,9 @@ def main():
                     services.full_description = form.full_description.data
                     services.price = form.price.data
                     session.commit()
+                    f = request.files['file']
+                    if f:
+                        f.save(f'./static/img/{name_for_image}.jpg')
                     return redirect('/admin/motorcycle_workshop')
                 else:
                     abort(404)

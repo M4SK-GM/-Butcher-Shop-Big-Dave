@@ -6,6 +6,7 @@
 {% endif %}
 <div class="card" style="width: 64rem; height: 30rem;">
     <div class="card-body">
+        <a href="/profile/change"><img src={{ user.photo }} alt="" class="round"></a>
         <h5 class="card-title" style="font-size: 40pt;">{{ user.surname }} {{ user.name }}</h5>
         <h6 class="card-subtitle mb-2 text-muted" style="font-size: 30pt;">ID: {{ user.id }}</h6>
         <h6 class="card-subtitle mb-2 text-muted" style="font-size: 30pt;">Email: {{ user.email }}</h6>

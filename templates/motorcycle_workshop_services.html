@@ -49,6 +49,7 @@
 {% for item in comment %}
 <div class="card" style="width: 48rem; margin: 10px;">
     <div class="card-body">
+        <img src={{ item.user.photo }} alt='Hi, im alt' class="round">
         <h5 class="card-title" style="font-size: 16pt;">{{item.user.surname}} {{item.user.name}}</h5>
         <p class="card-text" style="font-size: 12pt;">{{ item.text }}</p>
         {% if user.status == 'admin' %}
