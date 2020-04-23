@@ -22,6 +22,7 @@ from data import admin_form
 
 app = Flask(__name__)
 api = Api(app)
+app.config['JSON_AS_ASCII'] = False
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -105,7 +106,7 @@ def main():
     @login_required
     def confirm_email():
         form = confirm_form.ConfirmForm()
-        mail.send_mail(current_user.email, current_user.code)
+
         if form.validate_on_submit():
             if form.code.data == current_user.code:
                 session = db_session.create_session()
@@ -119,7 +120,8 @@ def main():
                     code="It now don't need",
                     surname=current_user.surname,
                     hashed_password=current_user.hashed_password,
-                    created_date=current_user.created_date
+                    created_date=current_user.created_date,
+                    photo=current_user.photo
                 )
                 session.add(user)
                 discount = Discount(
@@ -133,6 +135,8 @@ def main():
             else:
                 return render_template('confirm-email.html', title='Подтверждение почты', form=form,
                                        message='Неверный код')
+        else:
+            mail.send_mail(current_user.email, current_user.code)
         return render_template('confirm-email.html', title='Подтверждение почты', form=form)
 
     # Профиль|Изменение профиля
